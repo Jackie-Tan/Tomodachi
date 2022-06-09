@@ -1,0 +1,134 @@
+{% include "./header.html" %}
+{% load widget_tweaks %}
+{% load static %}
+
+<script>
+    fetchFeedPosts = () => {
+        fetch("/api/feed", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                'X-CSRFToken': "{{ csrf_token }}"
+            },
+        }).then((result) => {
+            if (result.ok) {
+                return result.json();
+            } else {
+                let htmlString = `
+                <div class="text-center my-4">
+                    <img src="{% static 'assets/error.svg' %}" width="300" class="py-4">
+                    <h3 class="py-4">Something went terribly wrong...</h3>
+                <div>
+                `;
+                let postsBody = document.getElementById("posts-body");
+                postsBody.insertAdjacentHTML(htmlString);
+            }
+        }).then((data) => {
+            let posts = data;
+            if (posts && posts.length >= 1) {
+                for (const post of posts) {
+                    let timestamp = new Date(post.timestamp);
+                    let converted_timestamp = `${timestamp.getDate()}/${timestamp.getMonth() + 1}/${timestamp.getFullYear()} ${timestamp.getHours()}:${timestamp.getMinutes()}`;
+                    let htmlString = `
+                    <div class="shadow list-group-item list-group-item-action d-flex gap-3 py-3" aria-current="true" onclick="window.location.href = '/post/?id=${post.id}';">
+                        <img src="${post.user.profile_image}" alt="twbs" width="32" height="32"
+                            class="rounded-circle flex-shrink-0">
+                        <div class="gap-2 w-100 justify-content-between">
+                            <div class="mb-2">
+                                <h6 class="mb-1"><a href="./profile/?username=${post.user.user.username}"
+                                        class="text-decoration-none link-dark">${post.user.user.username}</a></h6>
+                                <p style="overflow-wrap: anywhere" class="mb-0 opacity-75">${post.text}</p>
+                                <img src="" class="img-fluid mt-3 mb-1" id="${post.id}" hidden>
+                            </div>
+                            <small class="opacity-50 text-nowrap">${converted_timestamp}</small>
+                        </div>
+                    </div>
+                    `;
+                    let postsBody = document.getElementById("posts-body");
+                    postsBody.insertAdjacentHTML('beforeend', htmlString);
+                    if (post.image) {
+                        let postImage = document.getElementById(post.id);
+                        postImage.setAttribute('src', post.image);
+                        postImage.hidden = false;
+                    }
+                }
+            }
+        }).catch((error) => {
+            console.error(error);
+            alert('Something unexpected happened! Please contact the administrator for help.');
+        });
+    };
+
+
+    onPostStatusPressed = (form) => {
+        let formData = new FormData(form);
+        fetch("/post/", {
+            method: "POST",
+            body: formData,
+            headers: {
+                'X-CSRFToken': "{{ csrf_token }}"
+            },
+        }).then((response) => {
+            if (response.ok) {
+                return response.json();
+            } else {
+                alert('Error 404. Ops something went wrong');
+            }
+        }).then((data) => {
+            if (data.status != 'success') {
+                let errorMessages = document.getElementById('error-messages');
+                errorMessages.hidden = false;
+                for (const [key, value] of Object.entries(data.messages)) {
+                    let errorMessage = document.createElement('p');
+                    errorMessage.style.color = 'red';
+                    errorMessage.innerText = value;
+                    errorMessages.appendChild(errorMessage);
+                }
+            } else {
+                window.location.replace('/profile/');
+            }
+        }).catch((error) => {
+            console.error(error);
+            alert('Something unexpected happened. Please contact the administrator for help.');
+        });
+    };
+
+    fetchFeedPosts();
+</script>
+
+<div class="row animate__animated animate__fadeInLeft">
+    <div class="list-group px-4 py-4 col-md-11 m-auto">
+        <div class="border shadow py-3 px-3 mb-3 rounded-top">
+            <div class="flex-row d-flex">
+                <img src="{{app_user.profile_image.url}}" alt="profile-image" width="32" height="32"
+                    class="rounded-circle flex-shrink-0">
+                <h5 class="py-1 ms-2 mb-3">{{ app_user.user.username }}</h5>
+            </div>
+
+            <form method="post" action="/post/" enctype="multipart/form-data" id="post-form"
+                onsubmit="onPostStatusPressed(this); return false;">
+                {% csrf_token %}
+                {% for field in post_form %}
+                <div class="input-group mb-3">
+                    {{field |add_class:"form-control"}}
+                    {% if field.errors %}
+                    {% for error in field.errors %}
+                    p>{{ error|escape }}</p>
+                    {% endfor%}
+                    {% endif %}
+                </div>
+                {% endfor %}
+                <div hidden id="error-messages">
+                </div>
+                <button type="submit" class="btn btn-primary my-1">Post status</button>
+            </form>
+        </div>
+
+        <div id="posts-body">
+        </div>
+
+    </div>
+
+</div>
+
+{% include "./footer.html" %}

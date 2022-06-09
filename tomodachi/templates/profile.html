@@ -1,0 +1,90 @@
+{% include "./header.html" %}
+{% load static %}
+
+<script>
+    onAddFriendPressed = (button) => {
+        let username = button.value;
+        fetch("/send-friend-request/", {
+            method: "POST",
+            body: JSON.stringify({
+                receiver: `${username}`
+            }),
+            headers: {
+                'X-CSRFToken': "{{ csrf_token }}"
+            },
+        }).then((res) => {
+            if (res.ok) {
+                button.innerHTML = "Request sent";
+                button.disabled = true;
+                button.classList.remove("btn-primary")
+                button.classList.add("btn-outline-success");
+            } else {
+                alert('Bad response received');
+            }
+        }).catch((error) => {
+            console.error(error);
+            alert('Something unexpected happened. Please contact the administrator for help.')
+        });
+    };
+</script>
+
+<div class="row animate__animated animate__fadeInLeft">
+    <div class="list-group px-4 py-4 col-md-11 m-auto">
+        <div class="px-4 py-4 text-center">
+            <img class="d-block mx-auto mb-2 rounded-circle " src="{{ app_user.profile_image.url }}" alt="" width="100"
+                height="100">
+            <h2 class="fw-bold mb-4">{{app_user.user.username}}</h2>
+
+            {% if isOwnProfile %}
+            <div class="col-lg-6 mx-auto my-3">
+                <div class="d-grid gap-2 d-sm-flex justify-content-sm-center button-container">
+                    <button type="button" class="btn btn-primary btn-md px-4 gap-3 shadow"
+                        onclick="location.href = '/settings/';">Edit Profile</button>
+                <button type=" button" class="btn btn-outline-secondary btn-md px-4 shadow" onclick="location.href = '/profile-friends/';">Friend List</button>
+                </div>
+            </div>
+            {% else %}
+            <div class="col-lg-6 mx-auto my-3">
+                <div class="d-grid gap-2 d-sm-flex justify-content-sm-center button-container">
+                    {% if app_user.friendship_status == 0 %}
+                        <button type="button" value={{ app_user.user.username}} onclick="onAddFriendPressed(this);" class="btn btn-primary btn-md px-4 gap-3 shadow">Add Friend</button>
+                        
+                    {% else %}
+                        {% if app_user.friendship_status == 1 %}
+                        <button type="button" value={{ app_user.user.username}} disabled class="btn btn-outline-success btn-md px-4 gap-3 shadow">Request sent</button>
+                        {% else %}
+                            <button type="button" value={{ app_user.user.username}}  onclick="location.href = '/chat/{{ app_user.user.username }}/';" class="btn btn-primary btn-md px-4 gap-3 shadow">Send message</button>
+                        {% endif %}
+                    {% endif %}
+                        <button type="button" class="btn btn-outline-secondary btn-md px-4 shadow" onclick="location.href = '/profile-friends/?username={{app_user.user.username}}';">Friend List</button>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if posts|length > 0 %}
+        <div class="shadow">
+            {% for post in posts %}
+            <div class="shadow list-group-item list-group-item-action d-flex gap-3 py-3" aria-current="true" onclick="window.location.href = '/post/?id={{post.id}}';">
+                <img src="{{ post.user.profile_image.url }}" alt="twbs" width="32" height="32"
+                    class="rounded-circle flex-shrink-0">
+                <div class="gap-2 w-100 justify-content-between">
+                    <div class="mb-2">
+                        <h6 class="mb-1"><a href="/profile/?username={{ post.user.user.username}}" class="text-decoration-none link-dark">{{ post.user.user}}</a></h6>
+                        <p style="overflow-wrap: anywhere" class="mb-0 opacity-75">{{post.text}}</p>
+                        {% if post.image %}
+                            <img src="{{ post.image.url }}" class="img-fluid mt-3 mb-1" alt="...">
+                        {% endif %}
+                    </div>
+                    <small class="opacity-50 text-nowrap">{{ post.timestamp }}</small>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <h3>No Posts</h3>
+        {% endif %}
+    </div>
+</div>
+
+{% include "./footer.html" %}

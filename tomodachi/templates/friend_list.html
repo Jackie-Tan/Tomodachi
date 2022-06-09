@@ -1,0 +1,50 @@
+{% include "./header.html" %}
+{% load static %}
+
+<div class="row">
+    <div class="list-group px-4 py-4 col-md-11 m-auto">
+        <div class="py-3">
+            <div class="d-flex flex-row">
+                <div class="d-flex flex-row">
+                    <img src="{% static 'assets/default-profile-pic.svg' %}" alt="twbs" width="42" height="42"
+                        class="rounded-circle">
+                    <h4 class="my-2 mx-2 ms-2"><a href="#" class="text-decoration-none link-dark">Username</a></h4>
+                </div>
+            </div>
+        </div>
+
+        <h4 class="my-3">Friend List</h4>
+
+        <div class="shadow">
+            <div class="list-group-item list-group-item-action gap-3 py-3 px-3">
+                <div class="d-flex flex-row justify-content-between">
+                    <div class="d-flex flex-row">
+                        <img src="{% static 'assets/default-profile-pic.svg' %}" alt="twbs" width="32" height="32"
+                            class="rounded-circle">
+                        <h6 class="my-2 mx-2 ms-2"><a href="#" class="text-decoration-none link-dark">List group item
+                                heading</a></h6>
+                    </div>
+                    <div class="">
+                        <button type="button" class="btn btn-primary btn-md shadow">Add friend</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="list-group-item list-group-item-action gap-3 py-3 px-3">
+                <div class="d-flex flex-row justify-content-between">
+                    <div class="d-flex flex-row">
+                        <img src="{% static 'assets/default-profile-pic.svg' %}" alt="twbs" width="32" height="32"
+                            class="rounded-circle">
+                        <h6 class="my-2 mx-2 ms-2"><a href="#" class="text-decoration-none link-dark">List group item
+                                heading</a></h6>
+                    </div>
+                    <div class="">
+                        <button type="button" class="btn btn-primary btn-md shadow">Add friend</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include "./footer.html" %}

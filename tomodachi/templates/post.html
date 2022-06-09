@@ -1,0 +1,23 @@
+{% include "./header.html" %}
+{% load static %}
+
+<div class="row animate__animated animate__fadeInLeft">
+    <div class="list-group px-4 py-4 col-md-11 m-auto">
+        <div class="list-group-item d-flex gap-3 py-3 shadow" aria-current="true">
+            <img src="{{ post.user.profile_image.url }}" alt="twbs" width="32" height="32"
+                class="rounded-circle flex-shrink-0">
+            <div class="d-flex gap-2 w-100 justify-content-between">
+                <div>
+                    <h6 class="mb-0"><a href="/profile/?username={{ post.user.user.username}}" class="text-decoration-none link-dark">{{ post.user.user}}</a></h6>
+                    <p class="mb-0 opacity-75">{{ post.text}}</p>
+                    {% if post.image %}
+                    <img src="{{post.image.url}}" class="img-fluid mt-3">
+                    {% endif %}
+                </div>
+                <small class="opacity-50 text-nowrap">{{ post.timestamp }}</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include "./footer.html" %}

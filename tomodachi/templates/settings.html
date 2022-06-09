@@ -1,0 +1,80 @@
+{% include "./header.html" %}
+{% load static %}
+{% load widget_tweaks %}
+
+<script>
+    onChangePicturePressed = (form) => {
+        let formData = new FormData(form);
+        fetch("/change-profile-picture/", {
+            method: "POST",
+            body: formData,
+            headers: {
+                'X-CSRFToken': "{{ csrf_token }}"
+            },
+        }).then((response) => {
+            if (response.ok) {
+                return response.json();
+            } else {
+                alert('Error 404. Ops something went wrong');
+            }
+        }).then((data) => {
+            if (data.status != 'success') {
+                console.log(data)
+                let errorMessages = document.getElementById('error-messages');
+                errorMessages.hidden = false;
+                for (const [key, value] of Object.entries(data.messages)) {
+                    let errorMessage = document.createElement('p');
+                    errorMessage.style.color = 'red';
+                    errorMessage.innerText = value;
+                    errorMessages.appendChild(errorMessage);
+                }
+            } else {
+                window.location.replace('/profile/');
+            }
+        });
+    };
+</script>
+
+<div class="row animate__animated animate__fadeInLeft">
+    <div class="list-group px-4 py-4 col-md-11 m-auto">
+        <h3 class="py-1">Account Settings</h3>
+
+        <div class="my-3 border py-4 px-4 shadow">
+            <h5>Change Display Picture</h5>
+            <form method='POST' enctype="multipart/form-data" action="/change-profile-picture/" onsubmit="onChangePicturePressed(this); return false;">
+                {% csrf_token %}
+                {% if change_profile_picture_form %}
+                <div class="input-group mb-4 my-4">
+                    {{ change_profile_picture_form.profile_image | add_class:"form-control"}}
+                </div>
+                {% endif %}
+                <div hidden id="error-messages">
+                </div>
+                <button type="submit" class="btn btn-primary">Change picture</button>
+            </form>
+        </div>
+
+        <div class="my-3 border py-4 px-4 shadow">
+            <h5>Account Password</h5>
+            {% if password_change_form %}
+            <form id="user_sign_up_form" method="POST" action="{% url 'settings' %}">
+                {% csrf_token %}
+                {% for field in password_change_form %}
+                <div class="form-floating">
+                    {{ field |add_class:"form-control my-4" |remove_attr:"autofocus"}}
+                    {{ field.label_tag}}
+                    {% if field.errors %}
+                    {% for error in field.errors %}
+                    <p style="color:red">{{ error|escape }}</p>
+                    {% endfor %}
+                    {% endif %}
+                </div>
+                {% endfor %}
+                {% endif %}
+                <button type="submit" class="btn btn-primary shadow" type="submit">Change password</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% include "./footer.html" %}

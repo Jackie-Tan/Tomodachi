@@ -1,0 +1,101 @@
+{% include "./header.html" %}
+{% load static %}
+{{ chat_room_id|json_script:"chat_room_id" }}
+
+<script>
+
+    const chat_room_id = JSON.parse(document.getElementById('chat_room_id').textContent);
+    const chatSocket = new WebSocket('ws://' + window.location.host + '/ws/' + chat_room_id + '/');
+    
+    chatSocket.onmessage = (e) => { 
+        const data = JSON.parse(e.data);
+        let message = data.message;
+        let profile_image_url = data.profile_image_url;
+        let timestamp = new Date(data.timestamp);
+        let converted_timestamp = `${timestamp.getDate()}/${timestamp.getMonth() + 1}/${timestamp.getFullYear()} ${timestamp.getHours()}:${timestamp.getMinutes()}`;
+        let sender_username = data.sender_username
+        let text_messages_body = document.getElementById('text-messages-body');
+
+        let htmlString = `
+        <div class="border py-3 px-3 mb-3 rounded-top shadow-sm">
+            <div class="flex-row d-flex">
+                <img src="${profile_image_url}" width="32" height="32"
+                    class="rounded-circle flex-shrink-0" />
+                    <p class="mx-2" style="overflow-wrap: anywhere">
+                        ${message}
+                    </p>
+            </div>
+            <small class="opacity-50 text-nowrap">${converted_timestamp}</small>
+        </div>
+        `;
+        text_messages_body.insertAdjacentHTML('beforeend', htmlString);
+        let text_message_section = document.getElementById('text-message-section');
+        text_message_section.scrollTop = text_message_section.scrollHeight;
+    };
+
+    chatSocket.onclose = function (e) {
+        alert('Chat socket has closed');
+    };
+
+</script>
+
+<div class="px-0">
+    <div class="list-group px-4 py-4 col-md-11 m-auto animate__animated animate__fadeInUp" >
+        <div class="flex-row d-flex">
+            <img src="{{ target_user.profile_image.url }}" width="32" height="32"
+                class="rounded-circle flex-shrink-0">
+            <h5 class="py-1 ms-2 mb-3">{{ target_user.user.username }}</h5>
+        </div>
+        <div class="border py-3 px-3 mb-3 rounded-top" style="min-height: 75vh; max-height:75vh; overflow-y:auto;" id="text-message-section">
+
+            <div id="text-messages-body">
+                {% if messages %}
+                {% for message in messages %}
+                <div class="border py-3 px-3 mb-3 rounded-top shadow-sm">
+                    <div class="flex-row d-flex">
+                        <img src="{{ message.sender.profile_image.url}}" width="32" height="32"
+                            class="rounded-circle flex-shrink-0">
+                        <p class="mx-2" style="overflow-wrap: anywhere">
+                            {{ message.text }}
+                        </p>
+                    </div>
+                    <small class="opacity-50 text-nowrap">{{ message.timestamp|date:"j/n/Y H:i" }}</small>
+                </div>
+                {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col">
+                <input type="text" class="form-control" placeholder="Enter your message.." id="text-message-input"
+                    aria-label="Enter your message..">
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-primary shadow" id="send-button">Send message</button>
+            </div>
+        </div>
+
+
+    </div>
+</div>
+
+<script>
+    let messageInput = document.getElementById('text-message-input');
+    let sendButton = document.getElementById('send-button');
+    messageInput.focus();
+    messageInput.onkeyup = (event) => {
+        if (event.keyCode == 13) {
+            sendButton.click();
+        };
+    };
+    sendButton.onclick = (clickEvent) => {
+        chatSocket.send(JSON.stringify({
+            'chat_room_id' : {{ chat_room_id }},
+            'message': messageInput.value
+        }));
+        messageInput.value = '';
+    };
+</script>
+
+{% include "./footer.html" %}

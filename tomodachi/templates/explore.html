@@ -1,0 +1,67 @@
+{% include "./header.html" %}
+{% load static %}
+
+<script>
+    fetchAllPosts = () => {
+        fetch("/api/explore", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                'X-CSRFToken': "{{ csrf_token }}"
+            },
+        }).then((result) => {
+            if (result.ok) {
+                return result.json();
+            } else {
+                let htmlString = `
+                <div class="text-center my-4">
+                    <img src="{% static 'assets/error.svg' %}" width="300" class="py-4">
+                    <h3 class="py-4">Something went terribly wrong...</h3>
+                <div>
+                `;
+                let exploreBody = document.getElementById("explore-body");
+                exploreBody.insertAdjacentHTML('beforeend', htmlString);
+            }
+        }).then((data) => {
+            let posts = data;
+            if (posts) {
+                for (const post of posts) {
+                    let timestamp = new Date(post.timestamp);
+                    let converted_timestamp =
+                        `${timestamp.getDate()}/${timestamp.getMonth() + 1}/${timestamp.getFullYear()} ${timestamp.getHours()}:${timestamp.getMinutes()}`;
+                    let htmlString = `
+                    <div class="shadow list-group-item list-group-item-action d-flex gap-3 py-3" aria-current="true" onclick="window.location.href = '/post/?id=${post.id}';">
+                        <img src="${post.user.profile_image}" width="32" height="32"
+                            class="rounded-circle flex-shrink-0">
+                        <div class="gap-2 w-100 justify-content-between">
+                            <div>
+                                <h6 class="mb-1"><a href="/profile/?username=${post.user.user.username}" class="text-decoration-none link-dark">${post.user.user.username}</a></h6>
+                                <p class="mb-1 opacity-75" style="overflow-wrap: anywhere">${post.text}</p>
+                                <img src="" class="img-fluid mt-2 mb-1" id="${post.id}" hidden>
+                            </div>
+                            <small class="opacity-50 text-nowrap">${converted_timestamp}</small>
+                        </div>
+                    </div>
+                    `;
+                    let exploreBody = document.getElementById("explore-body");
+                    exploreBody.insertAdjacentHTML('beforeend', htmlString);
+                    if (post.image) {
+                        let postImage = document.getElementById(post.id);
+                        postImage.setAttribute('src', post.image);
+                        postImage.hidden = false;
+                    }
+                }
+            }
+        }).catch((error) => console.error(error));
+    };
+
+    fetchAllPosts();
+</script>
+
+<div class="row">
+    <div class="list-group px-4 py-4 col-md-11 m-auto animate__animated animate__fadeInLeft" id="explore-body">
+
+    </div>
+</div>
+
+{% include "./footer.html" %}

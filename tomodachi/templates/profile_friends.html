@@ -1,0 +1,97 @@
+{% include "./header.html" %}
+{% load static %}
+
+<script>
+    fetchUserFriends = () => {
+        fetch("/api/friends/{{app_user.user.username}}", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                'X-CSRFToken': "{{ csrf_token }}"
+            },
+        }).then((result) => {
+            if (result.ok) {
+                return result.json();
+            } else {
+                let htmlString = `
+                <div class="text-center my-4">
+                    <img src="{% static 'assets/error.svg' %}" width="300" class="py-4">
+                    <h3 class="py-4">Something went terribly wrong...</h3>
+                <div>
+                `;
+                let friendsBody = document.getElementById("friends-body");
+                friendsBody.insertAdjacentHTML('beforeend', htmlString);
+            }
+        }).then((data) => {
+            let friends = data;
+            if (friends) {
+                for (friend of friends) {
+                    let htmlString = `
+                    <div class="shadow">
+                        <div class="list-group-item list-group-item-action gap-3 py-3 px-3">
+                            <div class="d-flex flex-row justify-content-between">
+                                <div class="d-flex flex-row">
+                                    <img src="${friend.profile_image}" width="32" height="32"
+                                        class="rounded-circle">
+                                    <h6 class="my-2 mx-2 ms-2"><a href="/profile/?username=${friend.user.username}" class="text-decoration-none link-dark">${friend.user.username}</a></h6>
+                                </div>
+                                <div>
+                                    <button type="button" value="${friend.user.username}" class="btn btn-primary btn-md shadow mx-2" id="live-chat-${friend.user.username}" onclick="location.href = '/chat/${friend.user.username}/';">Send message</button>
+                                    <button type="button" value="${friend.user.username}" class="btn btn-secondary btn-md shadow" id="remove-friend-${friend.user.username}" onclick="onRemoveFriendPressed(this);">Remove friend</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                    let friendsBody = document.getElementById("friends-body");
+                    friendsBody.insertAdjacentHTML('beforeend', htmlString);
+                }
+            }
+        }).catch((error) => console.error(error));
+    };
+
+    onRemoveFriendPressed = (button) => {
+        fetch("/remove-friend/", {
+            method: "POST",
+            body: JSON.stringify({
+                username: button.value
+            }),
+            headers: {
+                'X-CSRFToken': "{{ csrf_token }}"
+            },
+        }).then((res) => {
+            if (res.ok) {
+                button.innerHTML = "Friend removed";
+                button.disabled = true;
+                button.classList.remove("btn-secondary");
+                button.classList.add("btn-outline-danger");
+                document.getElementById(`live-chat-${button.value}`).remove(); 
+            } else {
+                alert('Opps something bad happened');
+            }
+        }); 
+    };
+
+    fetchUserFriends();
+</script>
+
+<div class="row animate__animated animate__fadeInLeft">
+    <div class="list-group px-4 py-2 col-md-11 m-auto">
+        <div class="my-4">
+            <div class="d-flex flex-row">
+                <div class="d-flex flex-row">
+                    <img src="{{ app_user.profile_image.url }}" alt="twbs" width="42" height="42"
+                        class="rounded-circle">
+                    <h4 class="my-2 mx-2 ms-2"><a href="/profile/?username={{ app_user.user.username }}"
+                            class="text-decoration-none link-dark">{{ app_user.user.username }}</a></h4>
+                </div>
+            </div>
+        </div>
+
+    <div id="friends-body">
+    </div>       
+        
+    </div>
+</div>
+
+{% include "./footer.html" %}

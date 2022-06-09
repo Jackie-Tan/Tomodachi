@@ -1,0 +1,137 @@
+{% include "./header.html" %}
+{% load static %}
+
+<script>
+    fetchPendingFriendRequests = () => {
+        fetch("/api/pending-friend-requests/", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                'X-CSRFToken': "{{ csrf_token }}"
+            },
+        }).then((result) => {
+            if (result.ok) {
+                document.getElementById('loading-indicator').remove();
+                return result.json();
+            } else {
+                document.getElementById('loading-indicator').remove();
+                let htmlString = `
+                <div class="text-center">
+                    <img src="{% static 'assets/error.svg' %}" width="300" class="py-4">
+                    <h3 class="py-4">Something went terribly wrong...</h3>
+                <div>
+                `;
+                let requestBody = document.getElementById("request-body");
+                requestBody.insertAdjacentHTML('beforeend', htmlString);
+            }
+        }).then((data) => {
+            let pendingFriendRequests = data;
+            if (pendingFriendRequests) {
+                if (pendingFriendRequests.length >= 1) {
+                    for (const request of pendingFriendRequests) {
+                        let htmlString = `
+                        <div class="list-group-item list-group-item-action gap-3 py-3 px-3 shadow">
+                            <div class="d-flex flex-row justify-content-between">
+                                <div class="d-flex flex-row">
+                                    <img src="${request.sender.profile_image}" alt="twbs" width="32" height="32"
+                                        class="rounded-circle">
+                                    <h6 class="my-2 mx-2 ms-2"><a href="/profile/?username=${request.sender.user.username}"
+                                            class="text-decoration-none link-dark">${request.sender.user.username}</a></h6>
+                                </div>
+                                <div>
+                                    <button type="button" value=${request.id} id="accept-${request.id}"
+                                        class="btn btn-primary btn-md shadow mx-2" onclick="onAcceptPressed(this);">Accept</button>
+                                    <button type="button" value=${request.id} onclick="onDeclinePressed(this);"  id="decline-${request.id}"
+                                        class="btn btn-secondary btn-md shadow">Decline</button>
+                                </div>
+                            </div>
+                        </div>
+                        `;
+                        let requestBody = document.getElementById("request-body");
+                        requestBody.insertAdjacentHTML('beforeend', htmlString);
+                    }
+                }
+                else {
+                    let htmlString = `
+                    <div class="text-center">
+                        <img src="{% static 'assets/not_found.svg' %}" width="300" class="py-4">
+                        <h3 class="py-4">You currently have no friend requests</h3>
+                    <div>
+                    `;
+                    let requestBody = document.getElementById("request-body");
+                    requestBody.insertAdjacentHTML('beforeend', htmlString);
+                }
+            } 
+        }).catch((error) => {
+            console.error(error);
+            alert('Something unexpected happened. Please contact the administrator for help.')
+        });
+    };
+
+    onAcceptPressed = (button) => {
+        fetch("/accept-friend-request/", {
+            method: "POST",
+            body: JSON.stringify({
+                request_id: button.value
+            }),
+            headers: {
+                'X-CSRFToken': "{{ csrf_token }}"
+            },
+        }).then((res) => {
+            if (res.ok) {
+                button.innerHTML = "Request accepted";
+                button.disabled = true;
+                button.classList.remove("btn-primary");
+                button.classList.add("btn-outline-success");
+                document.getElementById(`decline-${button.value}`).remove();
+            } else {
+                alert('Something bad happened');
+            }
+        }).catch((error) => {
+            console.error(error);
+            alert('Something unexpected happened. Please contact the administrator for help.')
+        });
+    };
+
+    onDeclinePressed = (button) => {
+        fetch("/decline-friend-request/", {
+            method: "POST",
+            body: JSON.stringify({
+                request_id: button.value
+            }),
+            headers: {
+                'X-CSRFToken': "{{ csrf_token }}"
+            },
+        }).then((res) => {
+            if (res.ok) {
+                button.innerHTML = "Request declined";
+                button.disabled = true;
+                button.classList.remove("btn-secondary");
+                button.classList.add("btn-outline-danger");
+                document.getElementById(`accept-${button.value}`).remove();
+            } else {
+                alert('Something bad happened');
+            }
+        }).catch((error) => {
+            console.error(error);
+            alert('Something unexpected happened. Please contact the administrator for help.');
+        });
+    };
+
+    fetchPendingFriendRequests();
+</script>
+
+
+<div class="row animate__animated animate__fadeInLeft">
+    <div class="list-group px-4 py-4 col-md-11 m-auto">
+        <h3 class="my-3">Friend Requests</h3>
+        <div class="my-2" id="request-body">
+            <div class="d-flex align-items-center" id="loading-indicator">
+                <h5>Loading...</h5>
+                <div class="spinner-border text-primary ms-auto" role="status" aria-hidden="true"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include "./footer.html" %}
